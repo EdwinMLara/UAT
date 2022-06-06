@@ -1,0 +1,80 @@
+body{
+    text-align: center;
+}
+
+.containerRow{
+    display: flex;
+    flex-direction: row;
+}
+
+#chart{
+    flex: 3;
+}
+
+#myChart{
+    width: 100%;
+    height: 400px;
+    overflow: hidden;
+}
+
+#containerFlex{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.container{
+    display: flex;
+    flex-direction: column;
+    border-style: none none solid none;
+    width: 50%;
+    height: 200px;
+    margin: auto;
+    padding-bottom: 20px;
+}
+.containerBox{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.containerRowSpace{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+}
+
+.gearContainer{
+    display: flex;
+    flex-direction: column;
+    border-style: none none solid none;
+}
+
+.gear{
+    background-color: darkgreen;
+    border-style: solid;
+    width: 20px;
+    height: 20px;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.gearActive{
+    background-color: #D4FF33;
+    border-style: solid;
+    width: 20px;
+    height: 20px;
+    margin-left: 5px;
+    margin-left: 5px;
+}
+
+.containeButtons{
+    align-items: center;
+    padding: 30px;
+}
+
+.divtitle{
+    background-color: red;
+}

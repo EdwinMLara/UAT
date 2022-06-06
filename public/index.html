@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link type="text/css" rel="stylesheet" href="css/index.css">
+    <title>Dinamómetro UAT</title>
+</head>
+<body>
+    <div id="title">
+        <h1>Dinamómetro UAT</h1>
+    </div>
+    <div class="containerRow">
+        <div id="chart">
+            <canvas id="myChart"></canvas>
+        </div>
+        <div id="containerFlex">
+            <div class="container">
+                <p>Flujo</p>
+                <p id="flujoData">15</p>
+                <canvas id="canvasFlujo"></canvas>
+            </div>
+
+            <div class="container">
+                <p>Temperatura</p>
+                <p id="temperaturaData">100</p>
+                <canvas id="canvasTemperatura"></canvas>
+            </div>
+            
+        </div>
+    </div>
+
+    <div class="containerRowSpace">            
+        <div class="gearContainer">
+            <p>GP</p>
+            <div class="containerBox">
+                <div class="gear gearActive">N</div>
+                <div class="gear">1</div>
+                <div class="gear">2</div>
+                <div class="gear">3</div>
+                <div class="gear">4</div>
+                <div class="gear">5</div>
+                <div class="gear">6</div>
+            </div>
+        </div>
+
+        <div> 
+            <p>RPM</p>
+            <p id="rpm">15 rpm</p>
+        </div>
+
+        <div> 
+            <p>TPS</p>
+            <p id="tps">20%</p>
+        </div>
+
+        <div> 
+            <p>TPS-2</p>
+            <p id="tps2">20%</p>
+        </div>
+
+        <div> 
+            <p>Batería</p>
+            <p id="bateriaVoltaje">15 V</p>
+        </div>
+
+        <div class="containeButtons">
+            <button id="iniciar">Adquirir</button>
+            <button id="detener">Detener</button>
+            <button id="guardar">Guardar</button>
+        </div>
+    </div>
+</body>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/chart.min.js" charset="utf-8"></script>
+<script src="js/socketSerial.js"></script>
+<script src="js/charTest.js"></script>
+<script src="js/serialChart.js"></script>
+<script src="js/gauge.min.js"></script>
+<script src="js/flujo.js"></script>
+<script src="js/temperatura.js"></script>
+<script src="js/controles.js"></script>
+</html>

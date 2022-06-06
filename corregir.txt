@@ -1,0 +1,3 @@
+1.- hay que analizar cuando manda el identificador y que despues hay NaN y falla porque no es array.
+2.- error checar por una conexion al serial.
+3.- crear indicador de cuando esta guardando o almacenando.
