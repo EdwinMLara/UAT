@@ -33,12 +33,6 @@ guardar.onclick = (e) => {
         return;
     }
     if(confirm('Guardando Datos')){
-        /*let guardarAux = {
-            fun0 : 'celda',
-            fun1 : 'encoder',
-            fun2 : 'flujo',
-            fun3 : 'ecu'
-        }*/
 
         let strdata = "celda,encoder,flujo,rpm,tps1,temperatura,voltaje,tps2,marcha\n" ;
         let auxCeldaArr = dataSave['fun0'];
@@ -47,25 +41,21 @@ guardar.onclick = (e) => {
         let auxFlujoArr = dataSave['fun2'];
         let auxEcuArr = dataSave['fun3'];
 
-        /*Object.keys(dataSave).forEach(element => { 
-            strdata += guardarAux[element];
-            let aux = dataSave[element];
-            aux.forEach(item => {
-                strdata += "," + item;
-            });
-            strdata += "\n";
-        });*/
-        
+        console.log(auxCeldaArr.length)
+        console.log(auxEcuArr.length)
+
+        let k = 0;
+        let saltos = -1;
         for(let i=0;i<size;i++){
-            if(i === 0){
-                strdata +=  auxCeldaArr[i] + "," + auxEncoderArr[i] + "," + auxFlujoArr[i] + "," + auxEcuArr[0] + "," + auxEcuArr[1] + "," + auxEcuArr[2] + "," + auxEcuArr[3] + "," + auxEcuArr[4] + "," + auxEcuArr[5] + "\n"
-            }else{
+            if(k === 0){
+                strdata +=  auxCeldaArr[i] + "," + auxEncoderArr[i] + "," + auxFlujoArr[i] + "," + auxEcuArr[saltos*10] + "," + auxEcuArr[1 + saltos*10] + "," + auxEcuArr[2 + saltos*10] + "," + auxEcuArr[3 + saltos*10] + "," + auxEcuArr[4 + saltos*10 ] + "," + auxEcuArr[5 + saltos*10] + "\n"
+                saltos++;
+            }else
                 strdata +=  auxCeldaArr[i] + "," + auxEncoderArr[i] + "," + auxFlujoArr[i] + ",0,0,0,0,0\n";
-            }
-               
+            k < 10 ? k++ : k =0; 
         }
 
-        //console.log(strdata);
+        console.log(auxEcuArr);
 
         const blob = new Blob([strdata],{type:'text/plain; charset=utf-8'});
         let a = document.createElement('a');

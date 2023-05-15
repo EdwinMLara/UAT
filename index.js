@@ -60,7 +60,7 @@ io.on('connection', socket =>{
     console.log('Se ha iniciado una conecxion');
 
     socket.on('arduinoData',data =>{
-        console.log(data);
+        //console.log(data);
         if(data.hasOwnProperty('message')){
             if(data.message.localeCompare('iniciar') === 0){
                 if(serialstatus[0]){

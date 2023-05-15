@@ -8,6 +8,10 @@ const title = document.getElementById('title');
 const gpActive = [0];
 const startRead = [false];
 const boardError = [true];
+// Distancia del brazo del freno 0.16007 y agregando la gravedad
+const d = 0.16007*9.806;
+const gearTransmicionConvertions = [1,2.714,2.200,1.850,1.600,1.421,1.300];
+const gearReduccionClutch = 1.900;
 
 function decimalAdjust(type, value, exp) {
     // If the exp is undefined or zero...
@@ -41,13 +45,11 @@ function removeTitle(){
 }
 
 socket.on('arduinoData', data => {
-    console.log(data);
+    //console.log(data);
     if (typeof data === 'object') {
         if (data.hasOwnProperty('value')) {
             let serialData = data.value;
             let parseData = serialData.split(' ').map(num => parseFloat(num));
-            //let numSensors = parseData.length/10;
-            //console.log(parseData);
     
             let objAux = {
                 celda: [],
@@ -55,6 +57,11 @@ socket.on('arduinoData', data => {
                 flujo: [],
                 ecu: []
             }
+
+            /**
+             * Variable para la posicion en el array para graficar en RPM
+             */
+            let position;
 
             for (let i = 0; i < 4; i++) {
                 let newData = parseData.splice(0, 11);
@@ -76,9 +83,14 @@ socket.on('arduinoData', data => {
 
                 switch (indentificador) {
                     case 0:
+                        //Se va a guardar en el objecto torque
                         objAux.celda = newData;
                         break;
                     case 1:
+                        /**
+                         * el enconder me esta entregando RPM del freno que son las que voy a utlizar para graficar
+                         * se normaliza el vector para encontrar un posicion entre 0 y 160
+                        */
                         objAux.encoder = newData;
                         break;
                     case 2:
@@ -87,17 +99,9 @@ socket.on('arduinoData', data => {
                         flujoDataP.innerHTML = flujo;
                         break;
                     case 3:
+                        /**Valores entregados por la ECU */
                         objAux.ecu = newData;
                         rpmData.innerHTML = newData[0] + ' rpm';
-
-                        /**
-                         * con esto pinto en la grafica en funcion de rpm
-                         *  val0 y val1 son torque y potencia
-                         */
-
-                        let position = Math.floor((newData[0] / 16000) * 160);
-                        dataChartTest.fun0[position] = objAux.celda;
-                        dataChartTest.fun1[position] = objAux.encoder/100;
 
                         tps.innerHTML = newData[1] + ' %';
 
@@ -112,10 +116,21 @@ socket.on('arduinoData', data => {
                             gp[newData[5]].classList.add("gearActive");
                             gp[gpActive[0]].classList.remove("gearActive");
                             gpActive[0] = newData[5];
-                        }
+                        }   
+
+                        //**graficas de toque y potencia respecto al freno */
+                        let torque = objAux.celda*d;                       
+                        
+                        let rpmMotor = objAux.encoder*gearTransmicionConvertions[newData[5]]*gearReduccionClutch;
+    
+                        position = Math.floor((rpmMotor / maxRPM) * numDataTest);
+
+                        let potencia = torque*rpmMotor*0.0001904;
+
+                        dataChartTest.fun0[position] = {x:rpmMotor,y:torque};
+                        dataChartTest.fun1[position] = {x:rpmMotor,y:potencia};
 
                         chartTest.update();
-
                         break;
                     default:
                         console.log("Error en los datos");
