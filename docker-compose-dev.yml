@@ -1,0 +1,13 @@
+version: "2.19"
+services:
+  uatdevelopment:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/home/app
+      # 1.- esta instrucion es la ruta actual : y la ruta donde se montara
+      # 2.- para ejecutar un archivo cuztomizado es y no un docker compose es
+      # docker compose -f docker-compose-dev.yml up
