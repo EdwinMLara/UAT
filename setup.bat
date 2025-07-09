@@ -1,16 +1,32 @@
 @echo off
-setlocal EnableDelayedExpansion
 
 :: =============================================================================
-::  Entorno de Desarrollo UAT 
+::  VERIFICACION DE PERMISOS DE ADMINISTRADOR
+:: =============================================================================
+net session >nul 2>&1
+if %errorLevel% neq 0 (
+    echo [ERROR] Se requieren privilegios de Administrador para continuar.
+    echo.
+    echo Por favor, cierra esta ventana, haz clic derecho sobre el archivo
+    echo y selecciona "Ejecutar como administrador".
+    echo.
+    pause
+    exit /b
+) 
+
+setlocal EnableDelayedExpansion
+:: =============================================================================
+::  Entorno de Desarrollo UAT
 ::  Autor: INSOEL
-::  Version: 2.1
+::  Version: 3.1 (con chequeo de admin)
 ::
 ::  Descripcion:
 ::  Este script automatiza la preparacion de un entorno de desarrollo:
-::  1. Verifica e instala Node.js v18.x si es necesario.
-::  2. Verifica e instala Git para Windows si es necesario.
-::  3. Clona o actualiza el repositorio Git especificado.
+::  1. Verifica e instala el gestor de paquetes Chocolatey.
+::  2. Verifica e instala Node.js v18.x.
+::  3. Verifica e instala Git para Windows.
+::  4. Instala las dependencias para node-gyp (Python, Build Tools) y node-gyp mismo.
+::  5. Clona o actualiza el repositorio Git especificado.
 ::
 :: =============================================================================
 
@@ -38,11 +54,33 @@ echo Presiona una tecla para comenzar...
 pause >nul
 echo.
 
+:: =============================================================================
+::  PASO 1: CHOCOLATEY
+:: =============================================================================
+echo [PASO 1 de 5] Verificando la instalacion de Chocolatey...
+echo.
+where choco >nul 2>nul
+if %ERRORLEVEL% neq 0 (
+    echo --- Chocolatey no esta instalado. Se procedera con la instalacion.
+    echo [TAREA] Instalando Chocolatey...
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))"
+    if %ERRORLEVEL% neq 0 (
+        echo [ERROR] La instalacion de Chocolatey ha fallado.
+        goto :end_error
+    )
+    echo --- La ventana puede requerir refrescar el entorno. Se recomienda reiniciar la terminal si los siguientes pasos fallan.
+    echo --- Anadiendo Chocolatey al PATH para esta sesion...
+    set "PATH=%ALLUSERSPROFILE%\chocolatey\bin;!PATH!"
+) else (
+    echo --- ¡Excelente! Chocolatey ya esta instalado.
+)
+echo.
+
 
 :: =============================================================================
-::  PASO 1: NODE.JS
+::  PASO 2: NODE.JS
 :: =============================================================================
-echo [PASO 1 de 3] Verificando la instalacion de Node.js v18...
+echo [PASO 2 de 5] Verificando la instalacion de Node.js v18...
 echo.
 
 set "install_node=0"
@@ -84,9 +122,9 @@ if "%install_node%" == "1" (
 
 
 :: =============================================================================
-::  PASO 2: GIT
+::  PASO 3: GIT
 :: =============================================================================
-echo [PASO 2 de 3] Verificando la instalacion de Git...
+echo [PASO 3 de 5] Verificando la instalacion de Git...
 echo.
 
 where git >nul 2>nul
@@ -109,7 +147,6 @@ if %ERRORLEVEL% == 0 (
     echo --- Descarga completada.
     echo.
     echo [TAREA] Iniciando la instalacion de Git... (esto puede tardar varios minutos)
-    :: CORRECCION APLICADA AQUI
     start "" /wait "%GIT_INSTALLER_NAME%" /VERYSILENT /NORESTART
     echo --- Instalacion finalizada.
     echo.
@@ -119,11 +156,43 @@ if %ERRORLEVEL% == 0 (
     echo.
 )
 
+:: =============================================================================
+::  PASO 4: NODE-GYP Y DEPENDENCIAS
+:: =============================================================================
+echo [PASO 4 de 5] Instalando prerequisitos para node-gyp...
+echo.
+echo --- Este paso puede tardar bastante, ya que instala Python y las Herramientas de Compilacion de VS.
+echo.
+
+echo [TAREA] Instalando Python con Chocolatey...
+choco install python -y --force
+if %ERRORLEVEL% neq 0 (
+    echo [ERROR] Fallo la instalacion de Python con Chocolatey.
+    goto :end_error
+)
+echo.
+
+echo [TAREA] Instalando VS Build Tools 2022 con Chocolatey...
+choco install visualstudio2022buildtools -y --force
+if %ERRORLEVEL% neq 0 (
+    echo [ERROR] Fallo la instalacion de VS Build Tools.
+    goto :end_error
+)
+echo.
+
+echo [TAREA] Instalando node-gyp globalmente...
+call npm install -g node-gyp
+if %ERRORLEVEL% neq 0 (
+    echo [ERROR] Fallo la instalacion de node-gyp.
+    goto :end_error
+)
+echo --- node-gyp y sus dependencias se han instalado correctamente.
+echo.
 
 :: =============================================================================
-::  PASO 3: REPOSITORIO
+::  PASO 5: REPOSITORIO
 :: =============================================================================
-echo [PASO 3 de 3] Gestionando el repositorio Git...
+echo [PASO 5 de 5] Gestionando el repositorio Git...
 echo.
 
 :: Refrescar el PATH para asegurar que 'git' este disponible en esta sesion
@@ -180,11 +249,17 @@ echo      Proceso finalizado. Resumen del entorno:
 echo.
 echo =================================================================
 echo.
+echo [Chocolatey]
+where choco >nul 2>nul && choco --version || echo   No instalado.
+echo.
 echo [Node.js]
 where node >nul 2>nul && node --version || echo   No instalado.
 echo.
 echo [Git]
 where git >nul 2>nul && git --version || echo   No instalado.
+echo.
+echo [node-gyp]
+where node-gyp >nul 2>nul && call npm list -g node-gyp | findstr "node-gyp@" || echo   No instalado.
 echo.
 echo [Repositorio]
 if exist "%CLONE_DIR%" (
