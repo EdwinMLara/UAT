@@ -2,15 +2,16 @@
 setlocal EnableDelayedExpansion
 
 :: =============================================================================
-::  Script Combinado para Preparar Entorno de Desarrollo
-::  Autor: Gemini (fusion de dos codigos)
-::  Version: 2.1 (Corregido)
+::  Entorno de Desarrollo UAT 
+::  Autor: INSOEL
+::  Version: 2.1
 ::
 ::  Descripcion:
 ::  Este script automatiza la preparacion de un entorno de desarrollo:
 ::  1. Verifica e instala Node.js v18.x si es necesario.
 ::  2. Verifica e instala Git para Windows si es necesario.
 ::  3. Clona o actualiza el repositorio Git especificado.
+::
 :: =============================================================================
 
 :: --- Configuracion ---
