@@ -12,21 +12,22 @@ if %errorLevel% neq 0 (
     echo.
     pause
     exit /b
-) 
+)
 
 setlocal EnableDelayedExpansion
 :: =============================================================================
 ::  Entorno de Desarrollo UAT
 ::  Autor: INSOEL
-::  Version: 3.1 (con chequeo de admin)
+::  Version: 6.1 (corregido)
 ::
 ::  Descripcion:
 ::  Este script automatiza la preparacion de un entorno de desarrollo:
-::  1. Verifica e instala el gestor de paquetes Chocolatey.
+::  1. Verifica e instala Chocolatey.
 ::  2. Verifica e instala Node.js v18.x.
-::  3. Verifica e instala Git para Windows.
-::  4. Instala las dependencias para node-gyp (Python, Build Tools) y node-gyp mismo.
-::  5. Clona o actualiza el repositorio Git especificado.
+::  3. Verifica e instala Git.
+::  4. Instala las dependencias para node-gyp.
+::  5. Clona/actualiza el repositorio e instala dependencias usando una funcion.
+::  6. Inicia el servidor de desarrollo.
 ::
 :: =============================================================================
 
@@ -57,7 +58,7 @@ echo.
 :: =============================================================================
 ::  PASO 1: CHOCOLATEY
 :: =============================================================================
-echo [PASO 1 de 5] Verificando la instalacion de Chocolatey...
+echo [PASO 1 de 6] Verificando la instalacion de Chocolatey...
 echo.
 where choco >nul 2>nul
 if %ERRORLEVEL% neq 0 (
@@ -66,9 +67,8 @@ if %ERRORLEVEL% neq 0 (
     powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))"
     if %ERRORLEVEL% neq 0 (
         echo [ERROR] La instalacion de Chocolatey ha fallado.
-        goto :end_error
+        pause
     )
-    echo --- La ventana puede requerir refrescar el entorno. Se recomienda reiniciar la terminal si los siguientes pasos fallan.
     echo --- Anadiendo Chocolatey al PATH para esta sesion...
     set "PATH=%ALLUSERSPROFILE%\chocolatey\bin;!PATH!"
 ) else (
@@ -80,7 +80,7 @@ echo.
 :: =============================================================================
 ::  PASO 2: NODE.JS
 :: =============================================================================
-echo [PASO 2 de 5] Verificando la instalacion de Node.js v18...
+echo [PASO 2 de 6] Verificando la instalacion de Node.js v18...
 echo.
 
 set "install_node=0"
@@ -106,11 +106,11 @@ if "%install_node%" == "1" (
     powershell -Command "(New-Object System.Net.WebClient).DownloadFile('%NODE_INSTALLER_URL%', '%NODE_INSTALLER_NAME%')"
     if not exist %NODE_INSTALLER_NAME% (
         echo [ERROR] La descarga de Node.js ha fallado. Revisa tu conexion.
-        goto :end_error
+        pause
     )
     echo --- Descarga completada.
     echo.
-    echo [TAREA] Instalando Node.js v18... (esto puede tardar unos minutos)
+    echo [TAREA] Instalando Node.js v18...
     msiexec /i %NODE_INSTALLER_NAME% /qn
     echo --- Instalacion finalizada.
     echo.
@@ -124,7 +124,7 @@ if "%install_node%" == "1" (
 :: =============================================================================
 ::  PASO 3: GIT
 :: =============================================================================
-echo [PASO 3 de 5] Verificando la instalacion de Git...
+echo [PASO 3 de 6] Verificando la instalacion de Git...
 echo.
 
 where git >nul 2>nul
@@ -137,16 +137,15 @@ if %ERRORLEVEL% == 0 (
     echo --- No se encontro una instalacion de Git.
     echo --- Se procedera con la descarga e instalacion.
     echo.
-
     echo [TAREA] Descargando el instalador de Git...
     powershell -Command "(New-Object System.Net.WebClient).DownloadFile('%GIT_INSTALLER_URL%', '%GIT_INSTALLER_NAME%')"
     if not exist %GIT_INSTALLER_NAME% (
         echo [ERROR] La descarga de Git ha fallado. Revisa tu conexion.
-        goto :end_error
+        pause
     )
     echo --- Descarga completada.
     echo.
-    echo [TAREA] Iniciando la instalacion de Git... (esto puede tardar varios minutos)
+    echo [TAREA] Iniciando la instalacion de Git...
     start "" /wait "%GIT_INSTALLER_NAME%" /VERYSILENT /NORESTART
     echo --- Instalacion finalizada.
     echo.
@@ -159,7 +158,7 @@ if %ERRORLEVEL% == 0 (
 :: =============================================================================
 ::  PASO 4: NODE-GYP Y DEPENDENCIAS
 :: =============================================================================
-echo [PASO 4 de 5] Instalando prerequisitos para node-gyp...
+echo [PASO 4 de 6] Instalando prerequisitos para node-gyp...
 echo.
 echo --- Este paso puede tardar bastante, ya que instala Python y las Herramientas de Compilacion de VS.
 echo.
@@ -168,7 +167,7 @@ echo [TAREA] Instalando Python con Chocolatey...
 choco install python -y --force
 if %ERRORLEVEL% neq 0 (
     echo [ERROR] Fallo la instalacion de Python con Chocolatey.
-    goto :end_error
+    pause
 )
 echo.
 
@@ -176,7 +175,7 @@ echo [TAREA] Instalando VS Build Tools 2022 con Chocolatey...
 choco install visualstudio2022buildtools -y --force
 if %ERRORLEVEL% neq 0 (
     echo [ERROR] Fallo la instalacion de VS Build Tools.
-    goto :end_error
+    pause
 )
 echo.
 
@@ -184,65 +183,106 @@ echo [TAREA] Instalando node-gyp globalmente...
 call npm install -g node-gyp
 if %ERRORLEVEL% neq 0 (
     echo [ERROR] Fallo la instalacion de node-gyp.
-    goto :end_error
+    pause
 )
 echo --- node-gyp y sus dependencias se han instalado correctamente.
 echo.
 
 :: =============================================================================
-::  PASO 5: REPOSITORIO
+::  PASO 5: REPOSITORIO E INSTALACION DE DEPENDENCIAS
 :: =============================================================================
-echo [PASO 5 de 5] Gestionando el repositorio Git...
+echo [PASO 5 de 6] Gestionando el repositorio e instalando dependencias...
 echo.
+set "repo_ok=0"
 
 :: Refrescar el PATH para asegurar que 'git' este disponible en esta sesion
 echo --- Actualizando la ruta (PATH) para la sesion actual...
 for /f "tokens=*" %%a in ('where git') do set "GIT_PATH_DIR=%%~dpa"
 if defined GIT_PATH_DIR (
     set "PATH=!GIT_PATH_DIR!;!PATH!"
-    echo --- Git anadido al PATH de la sesion.
 ) else (
     echo [ADVERTENCIA] No se pudo encontrar Git.exe para agregarlo al PATH.
-    echo La clonacion del repositorio podria fallar.
 )
 echo.
 
 if exist "%CLONE_DIR%" (
     echo --- La carpeta del repositorio ya existe en: "%CLONE_DIR%"
-    choice /c YNP /m "Deseas (Y) Borrar y clonar de nuevo, (N) Actualizar (pull), o (P) Omitir"
+    choice /c YNP /m "Deseas (Y) Borrar y clonar, (N) Actualizar (pull), o (P) Omitir"
     if errorlevel 3 (
         echo --- Omitiendo operacion del repositorio.
-        goto :summary
+        set "repo_ok=0"
     ) else if errorlevel 2 (
         echo --- Actualizando el repositorio con 'git pull'...
         cd /d "%CLONE_DIR%"
         git pull
         cd ..
+        call :install_dependencies
     ) else if errorlevel 1 (
         echo --- Eliminando el repositorio existente...
         rmdir /s /q "%CLONE_DIR%"
         echo --- Clonando el repositorio de nuevo...
         git clone "%GIT_REPO_URL%" "%CLONE_DIR%"
+        call :install_dependencies
     )
 ) else (
     echo --- La carpeta del repositorio no existe.
     echo --- Clonando el repositorio en: "%CLONE_DIR%"
     git clone "%GIT_REPO_URL%" "%CLONE_DIR%"
+    call :install_dependencies
 )
 
 if %errorlevel% neq 0 (
-    echo [ERROR] Fallo la operacion con el repositorio Git.
-    goto :end_error
+    echo [ERROR] Fallo la operacion con el repositorio.
+    pause
 )
 echo.
 echo --- Operacion con el repositorio completada con exito.
 echo.
 
+:: =============================================================================
+::  FUNCIONES Y MANEJO DE ERRORES
+:: =============================================================================
 
+:install_dependencies
+    echo.
+    echo [TAREA] Instalando dependencias del proyecto (npm install)...
+    cd /d "%CLONE_DIR%"
+    if exist package.json (
+        npm install
+        if %ERRORLEVEL% neq 0 (
+            echo [ERROR] Fallo la instalacion de dependencias del proyecto.
+            pause
+            exit /b 1
+        )
+        echo --- Dependencias instaladas correctamente.
+        set "repo_ok=1"
+        goto :start_server
+    ) else (
+        echo [ADVERTENCIA] No se encontro package.json en el repositorio. No se instalaron dependencias.
+        set "repo_ok=0"
+        pause
+    )
+
+:: =============================================================================
+::  PASO 6: INICIAR SERVIDOR DE DESARROLLO
+:: =============================================================================
+:start_server
+if "%repo_ok%" == "1" (
+    echo [PASO 6 de 6] Iniciando el servidor de desarrollo...
+    echo.
+    echo --- Se abrira una NUEVA VENTANA de consola con el servidor del proyecto.
+    echo --- Puedes cerrar esta ventana principal una vez que la nueva aparezca.
+    echo.
+    cd /d "%CLONE_DIR%"
+    start "Servidor de Desarrollo UAT" cmd /k npm start
+) else (
+    echo [INFO] Se omitio el inicio del servidor porque no se realizo una operacion de clonado o actualizacion.
+)
 :: =============================================================================
 ::  RESUMEN FINAL
 :: =============================================================================
 :summary
+echo.
 echo =================================================================
 echo.
 echo      Proceso finalizado. Resumen del entorno:
@@ -271,14 +311,9 @@ echo.
 echo =================================================================
 echo.
 echo ¡Entorno listo!
-goto :end
-
-:end_error
-echo.
-echo [FALLO] El script se detuvo debido a un error.
-echo.
+goto :end 
 
 :end
 endlocal
 pause
-exit /b
+exit /b
