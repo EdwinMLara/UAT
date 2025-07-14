@@ -18,7 +18,7 @@ setlocal EnableDelayedExpansion
 :: =============================================================================
 ::  Entorno de Desarrollo UAT
 ::  Autor: INSOEL
-::  Version: 6.1 (corregido)
+::  Version: 6.2 (corregido y con apertura de navegador)
 ::
 ::  Descripcion:
 ::  Este script automatiza la preparacion de un entorno de desarrollo:
@@ -26,8 +26,8 @@ setlocal EnableDelayedExpansion
 ::  2. Verifica e instala Node.js v18.x.
 ::  3. Verifica e instala Git.
 ::  4. Instala las dependencias para node-gyp.
-::  5. Clona/actualiza el repositorio e instala dependencias usando una funcion.
-::  6. Inicia el servidor de desarrollo.
+::  5. Clona/actualiza el repositorio e instala dependencias.
+::  6. Inicia el servidor de desarrollo y abre el navegador.
 ::
 :: =============================================================================
 
@@ -238,6 +238,7 @@ if %errorlevel% neq 0 (
 echo.
 echo --- Operacion con el repositorio completada con exito.
 echo.
+goto :summary
 
 :: =============================================================================
 ::  FUNCIONES Y MANEJO DE ERRORES
@@ -262,6 +263,7 @@ echo.
         set "repo_ok=0"
         pause
     )
+    goto :eof
 
 :: =============================================================================
 ::  PASO 6: INICIAR SERVIDOR DE DESARROLLO
@@ -275,9 +277,14 @@ if "%repo_ok%" == "1" (
     echo.
     cd /d "%CLONE_DIR%"
     start "Servidor de Desarrollo UAT" cmd /k npm start
+
+    echo --- Abriendo localhost en tu navegador...
+    timeout /t 5 /nobreak >nul
+    start http://localhost:3000
 ) else (
     echo [INFO] Se omitio el inicio del servidor porque no se realizo una operacion de clonado o actualizacion.
 )
+
 :: =============================================================================
 ::  RESUMEN FINAL
 :: =============================================================================
@@ -311,9 +318,9 @@ echo.
 echo =================================================================
 echo.
 echo ¡Entorno listo!
-goto :end 
+goto :end
 
 :end
 endlocal
 pause
-exit /b
+exit /b
