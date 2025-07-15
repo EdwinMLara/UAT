@@ -1,8 +1,11 @@
-@ECHO OFF
-ECHO =================================
-ECHO        Dinamometro UAT
-ECHO    Creado por INSOEL and UNAM
-ECHO =================================
-CD C:\Users\emlar\Documents\Uat3.0.0
-start chrome http://localhost:3000/
+echo @echo off
+set "CLONE_DIR=%USERPROFILE%\Documents\UAT"
+echo title Servidor de Desarrollo UAT
+echo echo Iniciando servidor UAT... Por favor, no cierres esta ventana.
+echo =================================
+echo        Dinamometro UAT
+echo    Creado por INSOEL and UNAM
+echo =================================
+echo cd /d "%CLONE_DIR%"
 npm start
+start chrome http://localhost:3000/
