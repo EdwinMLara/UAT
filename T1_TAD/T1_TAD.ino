@@ -45,17 +45,13 @@ void setup()
 String Cadena = "";
 void loop()
 {
-
-  Cadena += "0 " + String(boardsArray[0].Data);
-  Cadena += " ";
-  Cadena += "1 " + String(boardsArray[1].Data);
-  Cadena += " ";
-  Cadena += "2 " + String(boardsArray[2].Data);
-  Cadena += " ";
-  Cadena += "3 " + String(boardsArray[3].Data);
-
-  Serial.println(Cadena);
   Cadena = "";
-
+  for (int i = 0; i < 4; i++)
+  {
+    Cadena += String(i) + " " + String(boardsArray[i].Data);
+    if (i < 3)
+      Cadena += " "; // avoid trailing space
+  }
+  Serial.println(Cadena);
   delay(100);
 }
